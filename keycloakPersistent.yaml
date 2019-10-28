@@ -26,7 +26,7 @@ items:
           app: keycloak
 spec:
   restartPolicy: Always
-        containers:
+    containers:
         - name: keycloak
           image: jboss/keycloak
           imagePullPolicy: IfNotPresent
