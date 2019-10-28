@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: apps/v1
+  kind: PersistentVolumeClaim
+  metadata:
+    annotations: {}
+    labels:
+      app: keycloak
+    name: keycloak-data
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+- apiVersion: apps/v2 
+  kind: Deployment
+  metadata:
+    name: keycloak
+  spec:
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          app: keycloak
+spec:
+  restartPolicy: Always
+        containers:
+        - name: keycloak
+          image: jboss/keycloak
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 8080
+    protocol: TCP
+          env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KEYCLOAK_USER
+            value: admin
+          - name: KEYCLOAK_PASSWORD
+            value: master
+          livenessProbe:
+            httpGet:
+              path: /auth
+              port: 8080
+            initialDelaySeconds: 60
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /auth
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+          volumeMounts:
+          - mountPath: /opt/jboss/keycloak/standalone/data
+            name: keycloak-data
+            readOnly: false
+        volumes:
+        - name: keycloak-data
+          persistentVolumeClaim:
+            claimName: keycloak-data
+    triggers:
+    - type: ConfigChange
